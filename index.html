@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBEY F3M </title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000; overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            transition: background 0.5s ease;
+        }
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
+        .console-container {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 85%; max-width: 700px; background: rgba(0, 0, 0, 0.88);
+            border: 2px solid #00ff00; box-shadow: 0 0 25px rgba(0,255,0,0.4);
+            padding: 20px; z-index: 2; color: #00ff00; border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .console-header { border-bottom: 1px solid #00ff00; padding-bottom: 10px; margin-bottom: 20px; font-weight: bold; letter-spacing: 2px; }
+        .log-output { height: 220px; overflow-y: auto; font-size: 14px; line-height: 1.6; margin-bottom: 20px; word-wrap: break-word; }
+        .input-line { display: flex; align-items: center; font-size: 16px; }
+        .prompt { color: #00ff00; margin-right: 10px; font-weight: bold; }
+        input[type="text"] { background: transparent; border: none; color: #00ff00; font-family: 'Courier New', Courier, monospace; font-size: 16px; width: 100%; outline: none; }
+        /* สไตล์สำหรับแถบสีแจ้งเตือนฉุกเฉิน */
+        .danger-mode { border-color: #ff0000 !important; box-shadow: 0 0 25px rgba(255,0,0,0.6) !important; color: #ff0000 !important; }
+        .danger-mode input, .danger-mode .prompt { color: #ff0000 !important; }
+        .danger-mode .console-header { border-bottom-color: #ff0000 !important; }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrixCanvas"></canvas>
+
+    <div class="console-container" id="consoleBox">
+        <div class="console-header" id="headerText">⚡ ADVANCED MULTI-TOOL TERMINAL v5.0 F3M </div>
+        <div class="log-output" id="logOutput">
+            [SYSTEM] Type <span style="color:white;">"help"</span> to view new available high-tier commands...
+        </div>
+        <div class="input-line">
+            <span class="prompt" id="promptText">root@system:~#</span>
+            <input type="text" id="cmdInput" autofocus placeholder="Enter command..." autocomplete="off">
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONFIG MATRIX RAIN ---
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const alphabet = "0101010101ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&*";
+        const fontSize = 16; const columns = canvas.width / fontSize;
+        const rainDrops = Array.from({ length: columns }).fill(canvas.height);
+        let matrixColor = '#0F0';
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = matrixColor; ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < rainDrops.length; i++) {
+                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+                if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) rainDrops[i] = 0;
+                rainDrops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 30);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+        // --- 2. AUDIO SYNTHESIZER (เสียง Beep ไม่ต้องพึ่งไฟล์นอก) ---
+        function playBeep(freq = 440, duration = 0.1) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            oscillator.type = 'sine'; oscillator.frequency.value = freq;
+            oscillator.connect(audioCtx.destination); oscillator.start();
+            setTimeout(() => oscillator.stop(), duration * 1000);
+        }
+
+        // --- 3. COMMAND PROCESSOR ---
+        const cmdInput = document.getElementById('cmdInput');
+        const logOutput = document.getElementById('logOutput');
+        const consoleBox = document.getElementById('consoleBox');
+        let isWorking = false; // ล็อกไม่ให้พิมพ์ซ้อนตอนโหลดพาสเวิร์ด
+
+        cmdInput.addEventListener('keydown', async function(e) {
+            if (e.key === 'Enter' && !isWorking) {
+                const rawInput = this.value;
+                const commandArgs = rawInput.trim().toLowerCase().split(' ');
+                const command = commandArgs[0];
+                this.value = '';
+
+                logOutput.innerHTML += `<br>[USER] root@system:~# ${rawInput}`;
+                playBeep(600, 0.05);
+
+                if (command === 'help') {
+                    logOutput.innerHTML += `<br>--- AVAILABLE COMMANDS ---
+                    <br>• <b>hack</b> : เริ่มต้นกระบวนการเจาะระบบแบบ Real-time
+                    <br>• <b>matrix [green/red/blue]</b> : เปลี่ยนสีธีมเอฟเฟกต์เบื้องหลัง
+                    <br>• <b>self-destruct</b> : นับถอยหลังทำลายระบบฉุกเฉิน
+                    <br>• <b>clear</b> : ล้างข้อมูลบนหน้าจอคอนโซล`;
+                }
+                
+                else if (command === 'hack') {
+                    isWorking = true;
+                    cmdInput.disabled = true;
+                    logOutput.innerHTML += `<br>[INIT] Connecting to mainframe...`;
+                    
+                    let percent = 0;
+                    const interval = setInterval(() => {
+                        percent += Math.floor(Math.random() * 8) + 2;
+                        if (percent > 100) percent = 100;
+                        
+                        // สร้างแท่ง Progress Bar
+                        let barCount = Math.floor(percent / 5);
+                        let bar = "█".repeat(barCount) + "░".repeat(20 - barCount);
+                        
+                        // บรรทัดอัปเดตสถานะปัจจุบัน
+                        let lastLineIdx = logOutput.innerHTML.lastIndexOf("[HACKING]");
+                        if(lastLineIdx !== -1) logOutput.innerHTML = logOutput.innerHTML.substring(0, lastLineIdx);
+                        
+                        logOutput.innerHTML += `<br>[HACKING] Progress: [${bar}] ${percent}%`;
+                        logOutput.scrollTop = logOutput.scrollHeight;
+                        playBeep(800 + percent * 4, 0.02);
+
+                        if (percent === 100) {
+                            clearInterval(interval);
+                            logOutput.innerHTML += `<br><span style="color: cyan;">[SUCCESS] ACCESS GRANTED. DATABASES EXFILTRATED! 🚀</span>`;
+                            cmdInput.disabled = false; isWorking = false; cmdInput.focus();
+                        }
+                    }, 150);
+                }
+
+                else if (command === 'matrix') {
+                    const color = commandArgs[1];
+                    if (color === 'red') { matrixColor = '#F00'; }
+                    else if (color === 'blue') { matrixColor = '#00F'; }
+                    else if (color === 'green') { matrixColor = '#0F0'; }
+                    else { logOutput.innerHTML += `<br>[ERROR] Usage: matrix [green | red | blue]`; }
+                }
+
+                else if (command === 'self-destruct') {
+                    isWorking = true; cmdInput.disabled = true;
+                    consoleBox.classList.add('danger-mode');
+                    let count = 5;
+                    
+                    const countdown = setInterval(() => {
+                        logOutput.innerHTML += `<br><span style="color: red; font-weight: bold;">[WARNING] SELF-DESTRUCT IN ${count}...</span>`;
+                        logOutput.scrollTop = logOutput.scrollHeight;
+                        playBeep(300, 0.3);
+                        count--;
+                        
+                        if(count < 0) {
+                            clearInterval(countdown);
+                            // เอฟเฟกต์ระเบิดหน้าจอดับ
+                            document.body.style.background = '#fff';
+                            consoleBox.style.display = 'none';
+                            playBeep(120, 0.8);
+                            setTimeout(() => {
+                                document.body.style.background = '#000';
+                                logOutput.innerHTML = `<span style="color: red;">[FATAL] SYSTEM DESTROYED. CORE DUMPED.</span>`;
+                                consoleBox.style.display = 'block';
+                                consoleBox.classList.remove('danger-mode');
+                                cmdInput.disabled = false; isWorking = false; cmdInput.focus();
+                            }, 600);
+                        }
+                    }, 1000);
+                }
+
+                else if (command === 'clear') {
+                    logOutput.innerHTML = '[SYSTEM] Terminal logs wiped.';
+                } else {
+                    logOutput.innerHTML += `<br><span style="color: #ff3333;">[ERROR] Unknown parameters. Type "help"</span>`;
+                }
+                
+                logOutput.scrollTop = logOutput.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
